@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -11,26 +5,70 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
-model Item {
+enum ReservationStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+}
+
+model User {
   id           Int           @id @default(autoincrement())
-  name         String
-  price        Float
-  stock        Int
+  username     String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   reservations Reservation[]
+  purchases    Purchase[]
+}
+
+model Drop {
+  id             Int           @id @default(autoincrement())
+  name           String
+  priceInCents   Int
+  totalStock     Int
+  availableStock Int
+  startsAt       DateTime
+  endsAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  reservations   Reservation[]
+  purchases      Purchase[]
+
+  @@index([startsAt])
 }
 
 model Reservation {
-  id             Int      @id @default(autoincrement())
-  itemId         Int
-  userId         String
-  reservedAt     DateTime
-  expirationTime DateTime
-  completed      Boolean  @default(false)
-  expired        Boolean  @default(false)
+  id          String            @id @default(cuid())
+  dropId      Int
+  userId      Int
+  status      ReservationStatus @default(ACTIVE)
+  reservedAt  DateTime          @default(now())
+  expiresAt   DateTime
+  completedAt DateTime?
+  expiredAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  drop        Drop              @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchase    Purchase?
 
-  item Item @relation(fields: [itemId], references: [id]) // Relation to Item model
+  @@index([dropId, status, expiresAt])
+  @@index([userId, status, expiresAt])
+}
 
-  // Other fields as necessary
+model Purchase {
+  id            String      @id @default(cuid())
+  dropId        Int
+  userId        Int
+  reservationId String      @unique
+  purchasedAt   DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  drop          Drop        @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([dropId, purchasedAt(sort: Desc)])
+  @@index([userId, purchasedAt(sort: Desc)])
 }
