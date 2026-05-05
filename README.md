@@ -13,6 +13,26 @@ Real-time limited-edition inventory backend using `Node.js`, `Express`, `Postgre
 
 Server default: `http://localhost:3000`
 
+## Full local run order
+
+1. In this backend project:
+   - `npx prisma migrate deploy`
+   - `npx prisma generate`
+   - `node server.js`
+2. In the frontend project at `C:\Users\azmai\OneDrive\Desktop\live codeing\techzu-task\sneaker-frontend`:
+   - `npm install`
+   - `npm run dev`
+3. Open the frontend at `http://localhost:5173`
+
+## Demo checklist
+
+1. Create a new drop with `POST /api/drops`
+2. Open two browser windows side by side on the frontend
+3. Reserve in one window and confirm live stock sync in the other
+4. Complete purchase and confirm the latest purchaser appears on the card
+5. Reserve again with another user and wait 60 seconds
+6. Confirm the reservation expires, stock returns, and all connected clients update
+
 ## Main endpoints
 
 - `GET /api/drops` — active drops with live stock and top 3 latest purchasers
