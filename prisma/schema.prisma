@@ -14,8 +14,23 @@ generator client {
 }
 
 model Item {
-  id    Int    @id @default(autoincrement())
-  name  String
-  price Float
-  stock Int
+  id           Int           @id @default(autoincrement())
+  name         String
+  price        Float
+  stock        Int
+  reservations Reservation[]
+}
+
+model Reservation {
+  id             Int      @id @default(autoincrement())
+  itemId         Int
+  userId         String
+  reservedAt     DateTime
+  expirationTime DateTime
+  completed      Boolean  @default(false)
+  expired        Boolean  @default(false)
+
+  item Item @relation(fields: [itemId], references: [id]) // Relation to Item model
+
+  // Other fields as necessary
 }
