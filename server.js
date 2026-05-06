@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { PrismaClient, ReservationStatus } = require('./generated/prisma');
+const { PrismaClient, ReservationStatus } = require('@prisma/client');
 const { Server } = require('socket.io');
 
 const envPath = path.join(__dirname, '.env');
