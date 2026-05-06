@@ -1,92 +1,93 @@
-# Sneaker Drop Backend
+# 👟 Sneaker Drop Backend
 
-Real-time limited-edition inventory backend using `Node.js`, `Express`, `PostgreSQL`, `Prisma`, and `Socket.IO`.
+Real-time, high-traffic limited-edition inventory system built for reliability and scale. This backend manages drop scheduling, atomic reservations, and live stock synchronization using **Node.js**, **Express**, **PostgreSQL (Neon)**, **Prisma**, and **Socket.IO**.
 
-## Run locally
+---
 
-1. Set `DATABASE_URL` in `.env`.
-2. Apply the schema:
-   - `npx prisma migrate deploy`
-   - `npx prisma generate`
-3. Start the API:
-   - `node server.js`
+## 🚀 Live Deployment
 
-Server default: `http://localhost:3000`
+- **API Base URL:** [https://sneaker-drop-backend-db.vercel.app](https://sneaker-drop-backend-db.vercel.app)
+- **Health Check:** [https://sneaker-drop-backend-db.vercel.app/health](https://sneaker-drop-backend-db.vercel.app/health)
+- **Frontend Link:** [https://sneaker-frontend-lilac.vercel.app/](https://sneaker-frontend-lilac.vercel.app/)
 
-## Full local run order
+---
 
-1. In this backend project:
-   - `npx prisma migrate deploy`
-   - `npx prisma generate`
-   - `node server.js`
-2. In the frontend project at `C:\Users\azmai\OneDrive\Desktop\live codeing\techzu-task\sneaker-frontend`:
-   - `npm install`
-   - `npm run dev`
-3. Open the frontend at `http://localhost:5173`
+## 🛠️ Industry-Level Architecture
 
-## Demo checklist
+The codebase has been refactored into a clean, modular structure following industry best practices:
 
-1. Create a new drop with `POST /api/drops`
-2. Open two browser windows side by side on the frontend
-3. Reserve in one window and confirm live stock sync in the other
-4. Complete purchase and confirm the latest purchaser appears on the card
-5. Reserve again with another user and wait 60 seconds
-6. Confirm the reservation expires, stock returns, and all connected clients update
-
-## Main endpoints
-
-- `GET /api/drops` — active drops with live stock and top 3 latest purchasers
-- `POST /api/drops` — create a new merch drop
-- `POST /api/reservations` — reserve one unit for 60 seconds
-- `POST /api/purchases` — complete purchase from an active reservation
-- `POST /api/users` — create/upsert a user
-
-Compatibility aliases:
-
-- `GET /items`
-- `POST /reserve`
-- `POST /purchase`
-
-## Sample payloads
-
-Create a drop:
-
-```json
-{
-  "name": "Air Jordan 1",
-  "price": 250,
-  "totalStock": 100,
-  "startsAt": "2026-05-06T12:00:00.000Z"
-}
+```text
+sneaker-drop/
+├── src/
+│   ├── app.js              # Express app & middleware configuration
+│   ├── config/
+│   │   └── prisma.js       # PrismaClient singleton for connection pooling
+│   ├── controllers/        # HTTP request handlers (thin layer)
+│   ├── routes/             # Route definitions & resource grouping
+│   ├── services/           # Core business logic & database transactions
+│   ├── sockets/            # Real-time event handling & socket initialization
+│   └── utils/              # Pure utility functions & input validators
+└── server.js               # Clean entry point for bootstrapping & shutdown
 ```
 
-Reserve:
+---
 
-```json
-{
-  "dropId": 1,
-  "username": "azmai"
-}
-```
+## 🏗️ Technical Highlights
 
-Purchase:
+- **Atomic Reservations:** Uses transactional `updateMany` with inventory guards to prevent overselling.
+- **Smart Expiration:** Each reservation is handled by a distributed-safe combination of memory timers and a database sweep safety net.
+- **Real-Time Sync:** Socket.IO broadcasts stock changes, reservation alerts, and purchase activity to all clients instantly.
+- **Database:** Hosted on **Neon PostgreSQL** with Prisma ORM for type-safe queries and reliable migrations.
 
-```json
-{
-  "reservationId": "ck_reservation_id",
-  "username": "azmai"
-}
-```
+---
 
-## Architecture notes
+## 🚥 Main API Endpoints
 
-- **60-second expiration:** each reservation is scheduled with `setTimeout` for near-real-time recovery, plus a 5-second DB sweep as a safety net after restarts or missed timers.
-- **Concurrency control:** reservations use a single transactional `updateMany` with `availableStock > 0`. Only one request can decrement the final unit, which prevents overselling.
-- **Purchase correctness:** stock is decremented only on reservation, not again on purchase. Purchase only flips reservation status to `COMPLETED` and records the purchase row.
-- **Activity feed:** `GET /api/drops` returns each drop with nested `latestPurchasers`, limited to the 3 most recent successful purchases.
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/api/drops` | `GET` | Fetch active drops with live stock & latest purchasers |
+| `/api/drops` | `POST` | Create a new product drop |
+| `/api/reservations` | `POST` | Reserve an item (60-second window) |
+| `/api/purchases` | `POST` | Finalize purchase from an active reservation |
+| `/api/users` | `POST` | Create or upsert a user |
+| `/health` | `GET` | System health check |
 
-## Socket events
+---
 
-- `drops:snapshot` — sent on connect with the full active-drop list
-- `drop:created` — new drop created
-- `drop:update` — stock/reservation/purchase changes
+## 💻 Local Development
+
+1. **Clone & Install:**
+   ```bash
+   npm install
+   ```
+
+2. **Environment Setup:**
+   Create a `.env` file:
+   ```env
+   DATABASE_URL="your_postgresql_url"
+   PORT=3000
+   ```
+
+3. **Prisma Setup:**
+   ```bash
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+
+4. **Start Server:**
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 📡 Socket Events
+
+- `drops:snapshot`: Initial state push on connection.
+- `drop:created`: Broadcast when a new drop is launched.
+- `drop:update`: Real-time delta updates for stock levels and activity feeds.
+
+---
+
+## 🛡️ License
+ISC
