@@ -82,3 +82,5 @@ start().catch(async (error) => {
   await prisma.$disconnect();
   process.exit(1);
 });
+
+module.exports = app;
