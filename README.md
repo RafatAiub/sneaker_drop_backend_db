@@ -4,7 +4,7 @@ Real-time, high-traffic limited-edition inventory system built for reliability a
 
 ---
 
-## 🚀 Live Deployment
+##  Live Deployment
 
 - **API Base URL:** [https://sneaker-drop-backend-db.vercel.app](https://sneaker-drop-backend-db.vercel.app)
 - **Health Check:** [https://sneaker-drop-backend-db.vercel.app/health](https://sneaker-drop-backend-db.vercel.app/health)
@@ -12,7 +12,7 @@ Real-time, high-traffic limited-edition inventory system built for reliability a
 
 ---
 
-## 🛠️ Industry-Level Architecture
+##  Industry-Level Architecture
 
 The codebase has been refactored into a clean, modular structure following industry best practices:
 
@@ -32,7 +32,7 @@ sneaker-drop/
 
 ---
 
-## 🏗️ Technical Highlights
+##  Technical Highlights
 
 - **Atomic Reservations:** Uses transactional `updateMany` with inventory guards to prevent overselling.
 - **Smart Expiration:** Each reservation is handled by a distributed-safe combination of memory timers and a database sweep safety net.
@@ -41,7 +41,7 @@ sneaker-drop/
 
 ---
 
-## 🚥 Main API Endpoints
+##  Main API Endpoints
 
 | Endpoint | Method | Description |
 | :--- | :--- | :--- |
@@ -54,7 +54,7 @@ sneaker-drop/
 
 ---
 
-## 💻 Local Development
+##  Local Development
 
 1. **Clone & Install:**
    ```bash
@@ -81,7 +81,7 @@ sneaker-drop/
 
 ---
 
-## 📡 Socket Events
+##  Socket Events
 
 - `drops:snapshot`: Initial state push on connection.
 - `drop:created`: Broadcast when a new drop is launched.
@@ -89,5 +89,5 @@ sneaker-drop/
 
 ---
 
-## 🛡️ License
+##  License
 ISC
