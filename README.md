@@ -1,93 +1,56 @@
-# 👟 Sneaker Drop Backend
+# Sneaker Drop Backend
 
-Real-time, high-traffic limited-edition inventory system built for reliability and scale. This backend manages drop scheduling, atomic reservations, and live stock synchronization using **Node.js**, **Express**, **PostgreSQL (Neon)**, **Prisma**, and **Socket.IO**.
+This is a real-time inventory system designed to handle high-traffic limited edition drops without overselling.
 
----
+## How to run the app (including SQL schema setup)
 
-##  Live Deployment
-
-- **API Base URL:** [https://sneaker-drop-backend-db.vercel.app](https://sneaker-drop-backend-db.vercel.app)
-- **Health Check:** [https://sneaker-drop-backend-db.vercel.app/health](https://sneaker-drop-backend-db.vercel.app/health)
-- **Frontend Link:** [https://sneaker-frontend-lilac.vercel.app/](https://sneaker-frontend-lilac.vercel.app/)
-
----
-
-##  Industry-Level Architecture
-
-The codebase has been refactored into a clean, modular structure following industry best practices:
-
-```text
-sneaker-drop/
-├── src/
-│   ├── app.js              # Express app & middleware configuration
-│   ├── config/
-│   │   └── prisma.js       # PrismaClient singleton for connection pooling
-│   ├── controllers/        # HTTP request handlers (thin layer)
-│   ├── routes/             # Route definitions & resource grouping
-│   ├── services/           # Core business logic & database transactions
-│   ├── sockets/            # Real-time event handling & socket initialization
-│   └── utils/              # Pure utility functions & input validators
-└── server.js               # Clean entry point for bootstrapping & shutdown
-```
-
----
-
-##  Technical Highlights
-
-- **Atomic Reservations:** Uses transactional `updateMany` with inventory guards to prevent overselling.
-- **Smart Expiration:** Each reservation is handled by a distributed-safe combination of memory timers and a database sweep safety net.
-- **Real-Time Sync:** Socket.IO broadcasts stock changes, reservation alerts, and purchase activity to all clients instantly.
-- **Database:** Hosted on **Neon PostgreSQL** with Prisma ORM for type-safe queries and reliable migrations.
-
----
-
-##  Main API Endpoints
-
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/api/drops` | `GET` | Fetch active drops with live stock & latest purchasers |
-| `/api/drops` | `POST` | Create a new product drop |
-| `/api/reservations` | `POST` | Reserve an item (60-second window) |
-| `/api/purchases` | `POST` | Finalize purchase from an active reservation |
-| `/api/users` | `POST` | Create or upsert a user |
-| `/health` | `GET` | System health check |
-
----
-
-##  Local Development
-
-1. **Clone & Install:**
+1. **Install dependencies:**
    ```bash
    npm install
    ```
 
-2. **Environment Setup:**
-   Create a `.env` file:
+2. **Set up the database:**
+   Create a `.env` file in the root directory and add your PostgreSQL database URL:
    ```env
-   DATABASE_URL="your_postgresql_url"
-   PORT=3000
+   DATABASE_URL="your_postgresql_url_here"
    ```
 
-3. **Prisma Setup:**
+3. **Apply the SQL schema:**
+   Run the following commands to set up your database tables and generate the Prisma client:
    ```bash
-   npx prisma generate
    npx prisma migrate deploy
+   npx prisma generate
    ```
 
-4. **Start Server:**
+4. **Seed the database (Optional):**
+   If you want to start with some sample sneaker drops, run:
+   ```bash
+   npx prisma db seed
+   ```
+
+5. **Start the server:**
    ```bash
    npm run dev
    ```
 
----
+## Architecture Choice: How did you handle the 60-second expiration logic?
 
-##  Socket Events
+We used a **two-layer expiration system** to ensure stock is returned quickly and reliably if a user doesn't complete their purchase:
 
-- `drops:snapshot`: Initial state push on connection.
-- `drop:created`: Broadcast when a new drop is launched.
-- `drop:update`: Real-time delta updates for stock levels and activity feeds.
+1. **In-Memory Timers (Primary):** The moment a user reserves an item, we start a `setTimeout` timer in the Node.js process. This handles the expiration instantly at the exactly 60-second mark, providing a fast and snappy user experience.
+2. **Database Sweep (Safety Net):** We also run a background process every 5 seconds that queries the database for any reservations where the `expiresAt` time has passed but the status is still "ACTIVE". This acts as a reliable fallback just in case the server restarts or an in-memory timer gets missed.
 
----
+## Concurrency: How did you prevent multiple users from claiming the same last item?
 
-##  License
-ISC
+We prevented overselling by using **Atomic Database Transactions** at the database level, rather than relying on application-level checks.
+
+Instead of checking the stock and then updating it later (which creates a race condition if two people check at the exact same millisecond), we use a single update query with a strict condition:
+
+```javascript
+where: { 
+  id: dropId, 
+  availableStock: { gt: 0 } 
+}
+```
+
+This tells the database: "Decrement the stock by 1, but *only* if the available stock is strictly greater than 0 right now." Because modern databases process these row updates atomically, if 100 people click "Reserve" at the exact same time for the very last pair of sneakers, the database will only allow one update to actually succeed. The other 99 requests will see that 0 rows were updated, and our code safely returns a "Sold Out" error to them.
