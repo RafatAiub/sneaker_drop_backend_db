@@ -19,5 +19,8 @@
     "express": "^5.2.1",
     "prisma": "^6.19.3",
     "socket.io": "^4.8.3"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
